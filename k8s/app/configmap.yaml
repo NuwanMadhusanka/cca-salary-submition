@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app
+data:
+  DB_HOST: postgres.data.svc.cluster.local
+  DB_PORT: "5432"
+  DB_NAME: salarydb
+  IDENTITY_URL: http://identity:8082
+  SALARY_URL: http://salary-submission:8081
+  SALARY_SERVICE_URL: http://salary-submission:8081
+  VOTE_URL: http://vote:8083
+  SEARCH_URL: http://search:8084
+  STATS_URL: http://stats:8085
+  CORS_ORIGIN: "*"
+  APPROVAL_THRESHOLD: "3"

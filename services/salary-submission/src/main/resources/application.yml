@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://${DATABASE_HOST:salary-transparency-db.postgres.database.azure.com}:${DATABASE_PORT:5432}/${DATABASE_NAME:postgres}
-    username: ${DATABASE_USER:nuwan_root}
-    password: ${DATABASE_PASSWORD:Root123456}
+    username: ${DATABASE_USER:test}
+    password: ${DATABASE_PASSWORD:test}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

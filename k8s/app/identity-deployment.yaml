@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: identity
-          image: techsalaryacr.azurecr.io/identity:latest
-          imagePullPolicy: Always
+          image: techsalary-local/identity:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
           env:

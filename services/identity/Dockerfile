@@ -1,15 +1,13 @@
 # Stage 1: Build
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM maven:3.9-eclipse-temurin-17-focal AS build
 WORKDIR /app
-COPY mvnw .
-COPY .mvn .mvn
 COPY pom.xml .
-RUN ./mvnw dependency:go-offline -q
+RUN mvn dependency:go-offline -q
 COPY src ./src
-RUN ./mvnw package -DskipTests -q
+RUN mvn package -DskipTests -q
 
 # Stage 2: Run
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-focal
 WORKDIR /app
 
 # Create non-root user for security

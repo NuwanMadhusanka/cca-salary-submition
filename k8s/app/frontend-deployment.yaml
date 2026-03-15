@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: techsalaryacr.azurecr.io/frontend:latest
-          imagePullPolicy: Always
+          image: techsalary-local/frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           readinessProbe:

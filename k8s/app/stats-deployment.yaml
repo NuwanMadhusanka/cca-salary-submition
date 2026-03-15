@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: stats
-          image: techsalaryacr.azurecr.io/stats:latest
-          imagePullPolicy: Always
+          image: techsalary-local/stats:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8085
           env:

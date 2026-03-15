@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: salary-submission
-          image: techsalaryacr.azurecr.io/salary-submission:latest
-          imagePullPolicy: Always
+          image: techsalary-local/salary-submission:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
           env:

@@ -8,7 +8,7 @@ WORKDIR /app
 # Install dependencies only when needed
 FROM base AS deps
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Stage 2: Production
 FROM node:18-alpine AS runner

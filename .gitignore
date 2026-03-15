@@ -45,6 +45,7 @@ mongodata/
 dist/
 build/
 out/
+docs/
 
 # Testing
 coverage/

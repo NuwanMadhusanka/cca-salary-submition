@@ -1,45 +1,24 @@
-# Search Service Dockerfile
-# Multi-stage build for production optimization
+# ---- Build stage ----
+FROM node:20-alpine AS builder
 
-# Stage 1: Base
-FROM node:18-alpine AS base
 WORKDIR /app
 
-# Install dependencies only when needed
-FROM base AS deps
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --ignore-engines
 
-# Stage 2: Production
-FROM node:18-alpine AS runner
-WORKDIR /app
-
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 searchservice
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy application code
 COPY . .
+RUN yarn build
 
-# Set ownership to non-root user
-RUN chown -R searchservice:nodejs /app
+# ---- Production stage ----
+FROM node:20-alpine AS production
 
-# Switch to non-root user
-USER searchservice
+WORKDIR /app
 
-# Expose port
-EXPOSE 8084
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --ignore-engines --production
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8084/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+COPY --from=builder /app/dist ./dist
 
-# Set environment to production
-ENV NODE_ENV=production
-ENV PORT=8084
+EXPOSE 3000
 
-# Start the service
-CMD ["node", "server.js"]
+CMD ["node", "dist/main"]

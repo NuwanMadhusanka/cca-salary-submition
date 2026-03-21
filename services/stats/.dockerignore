@@ -1,0 +1,10 @@
+.mvn/
+mvnw
+mvnw.cmd
+.git/
+.gitignore
+README*.md
+*.md
+.env
+src/
+pom.xml

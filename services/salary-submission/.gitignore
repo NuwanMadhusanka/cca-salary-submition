@@ -83,7 +83,7 @@ Desktop.ini
 
 # Environment Variables - IMPORTANT!
 .env
-.env.local
+.env
 .env.*.local
 *.env
 

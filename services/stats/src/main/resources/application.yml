@@ -1,6 +1,6 @@
 spring:
   application:
-    name: salary-submission-service
+    name: stats-service
 
   datasource:
     url: jdbc:postgresql://${DATABASE_HOST:salary-transparency-db.postgres.database.azure.com}:${DATABASE_PORT:5432}/${DATABASE_NAME:postgres}
@@ -14,7 +14,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
@@ -22,23 +22,9 @@ spring:
         default_schema: salary-submissions
         format_sql: true
 
-  # CORS Configuration
-  web:
-    cors:
-      allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
-      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-      allowed-headers: "*"
-      allow-credentials: true
-
 server:
-  port: ${SERVICE_PORT:8080}
-  compression:
-    enabled: true
-  error:
-    include-message: always
-    include-binding-errors: always
+  port: ${SERVICE_PORT:8081}
 
-# Actuator Configuration (Health Checks)
 management:
   endpoints:
     web:
@@ -49,7 +35,6 @@ management:
     health:
       show-details: always
 
-# SpringDoc (Swagger UI)
 springdoc:
   api-docs:
     path: /api/api-docs
@@ -57,10 +42,7 @@ springdoc:
     path: /api/swagger-ui.html
     operations-sorter: method
 
-# Logging
 logging:
   level:
     root: INFO
     com.salary.transparency: ${LOG_LEVEL:INFO}
-    org.springframework.web: ${LOG_LEVEL:INFO}
-    org.hibernate.SQL: ${SHOW_SQL:false}

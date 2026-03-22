@@ -6,5 +6,4 @@ mvnw.cmd
 README*.md
 *.md
 .env
-src/
-pom.xml
+target/

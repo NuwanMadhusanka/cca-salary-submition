@@ -9,7 +9,7 @@ export default registerAs(
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'search_service',
+    database: process.env.DB_NAME || 'search_db',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
     synchronize: process.env.NODE_ENV !== 'production',

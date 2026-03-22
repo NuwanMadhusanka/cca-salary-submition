@@ -97,7 +97,7 @@ router.post('/auth/login', async (req, res) => {
  */
 router.post('/submissions', async (req, res) => {
   try {
-    const response = await proxyRequest(SALARY_URL, '/submissions', 'POST', req.body);
+    const response = await proxyRequest(SALARY_URL, '/api/salary-submissions', 'POST', req.body);
     res.status(response.status).json(response.data);
   } catch (error) {
     res.status(error.status || 500).json(error.data);
@@ -110,7 +110,7 @@ router.post('/submissions', async (req, res) => {
  */
 router.get('/submissions/:id', async (req, res) => {
   try {
-    const response = await proxyRequest(SALARY_URL, `/submissions/${req.params.id}`, 'GET');
+    const response = await proxyRequest(SALARY_URL, `/api/salary-submissions/${req.params.id}`, 'GET');
     res.status(response.status).json(response.data);
   } catch (error) {
     res.status(error.status || 500).json(error.data);
@@ -125,7 +125,7 @@ router.get('/search', async (req, res) => {
   try {
     // Forward query parameters
     const queryString = new URLSearchParams(req.query).toString();
-    const path = `/search${queryString ? '?' + queryString : ''}`;
+    const path = `/api/v1/search${queryString ? '?' + queryString : ''}`;
     const response = await proxyRequest(SEARCH_URL, path, 'GET');
     res.status(response.status).json(response.data);
   } catch (error) {
@@ -140,7 +140,7 @@ router.get('/search', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     const queryString = new URLSearchParams(req.query).toString();
-    const path = `/stats${queryString ? '?' + queryString : ''}`;
+    const path = `/api/stats${queryString ? '?' + queryString : ''}`;
     const response = await proxyRequest(STATS_URL, path, 'GET');
     res.status(response.status).json(response.data);
   } catch (error) {

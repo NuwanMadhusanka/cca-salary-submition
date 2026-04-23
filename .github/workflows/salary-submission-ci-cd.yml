@@ -1,0 +1,46 @@
+name: Salary Submission Service CI/CD
+
+on:
+  push:
+    branches: [ feature/stat_search_services_deployments ]
+    paths:
+      - 'services/salary-submission/**'
+
+  pull_request:
+    branches: [ feature/stat_search_services_deployments ]
+    paths:
+      - 'services/salary-submission/**'
+
+env:
+  IMAGE_NAME: nuwan1998/salary-submission-service
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate image tag
+        id: meta
+        run: echo "tag=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/salary-submission
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}

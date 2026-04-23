@@ -26,12 +26,13 @@ const authenticateToken = (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     
     // Attach user info to request object
+    // userId claim is set explicitly; fall back to sub (subject) for older tokens
     req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
+      userId: decoded.userId ?? parseInt(decoded.sub, 10),
+      email: decoded.email ?? null,
     };
-    
-    console.log(`Authenticated user: ${req.user.email} (ID: ${req.user.userId})`);
+
+    console.log(`Authenticated user ID: ${req.user.userId}`);
     next();
     
   } catch (error) {

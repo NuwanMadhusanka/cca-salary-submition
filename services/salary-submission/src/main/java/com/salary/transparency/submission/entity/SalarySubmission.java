@@ -61,11 +61,15 @@ public class SalarySubmission {
 
     @Column(name = "currency", length = 10)
     @Builder.Default
-    private String currency = "USD";
+    private String currency = "LKR";
 
     @Column(name = "employment_type", length = 20)
     @Builder.Default
     private String employmentType = "Full-time";
+
+    @Column(name = "anonymize")
+    @Builder.Default
+    private Boolean anonymize = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)

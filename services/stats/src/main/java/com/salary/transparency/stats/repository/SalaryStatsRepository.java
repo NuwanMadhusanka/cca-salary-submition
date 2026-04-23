@@ -15,14 +15,14 @@ public interface SalaryStatsRepository extends JpaRepository<SalarySubmission, L
     @Query(value = """
         SELECT
             COUNT(*) as sampleSize,
-            MIN(base_salary) as minSalary,
-            MAX(base_salary) as maxSalary,
-            AVG(base_salary) as avgSalary,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY base_salary) as median,
-            PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY base_salary) as p25,
-            PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY base_salary) as p75,
-            PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY base_salary) as p90
-        FROM "salary-submissions".salary_submissions
+            MIN(total_compensation) as minSalary,
+            MAX(total_compensation) as maxSalary,
+            AVG(total_compensation) as avgSalary,
+            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_compensation) as median,
+            PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_compensation) as p25,
+            PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_compensation) as p75,
+            PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY total_compensation) as p90
+        FROM salary.salary_submissions
         WHERE status = 'APPROVED'
           AND (:role IS NULL OR LOWER(job_title) LIKE LOWER(CONCAT('%', :role, '%')))
           AND (:country IS NULL OR LOWER(country) = LOWER(:country))
@@ -38,12 +38,12 @@ public interface SalaryStatsRepository extends JpaRepository<SalarySubmission, L
     @Query(value = """
         SELECT
             TO_CHAR(grp.period_bucket, 'YYYY-MM') as period,
-            AVG(grp.base_salary) as avgSalary,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY grp.base_salary) as median,
+            AVG(grp.total_compensation) as avgSalary,
+            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY grp.total_compensation) as median,
             COUNT(*) as sampleSize
         FROM (
-            SELECT base_salary, DATE_TRUNC(:period, created_at) as period_bucket
-            FROM "salary-submissions".salary_submissions
+            SELECT total_compensation, DATE_TRUNC(:period, created_at) as period_bucket
+            FROM salary.salary_submissions
             WHERE status = 'APPROVED'
               AND (:role IS NULL OR LOWER(job_title) LIKE LOWER(CONCAT('%', :role, '%')))
               AND (:company IS NULL OR company = :company)

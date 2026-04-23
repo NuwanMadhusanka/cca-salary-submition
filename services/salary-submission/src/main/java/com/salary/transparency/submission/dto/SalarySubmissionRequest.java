@@ -57,4 +57,6 @@ public class SalarySubmissionRequest {
 
     @Size(max = 20, message = "Employment type must be less than 20 characters")
     private String employmentType = "Full-time";
+
+    private Boolean anonymize = false;
 }

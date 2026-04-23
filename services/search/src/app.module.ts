@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { appConfig, databaseConfig } from './config';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -13,8 +12,7 @@ import { appConfig, databaseConfig } from './config';
       envFilePath: '.env',
     }),
     DatabaseModule,
+    SearchModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

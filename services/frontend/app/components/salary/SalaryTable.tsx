@@ -4,11 +4,6 @@ import { StatusBadge } from "./StatusBadge";
 import { EmptyState } from "~/components/ui/EmptyState";
 import { Button } from "~/components/ui/Button";
 
-const MONTH_NAMES = [
-  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
 interface SalaryTableProps {
   records: SalaryRecord[];
 }
@@ -30,37 +25,54 @@ export function SalaryTable({ records }: SalaryTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
+      <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="pb-3 pr-4 font-medium text-gray-500">Period</th>
-            <th className="pb-3 pr-4 font-medium text-gray-500">Amount</th>
-            <th className="pb-3 pr-4 font-medium text-gray-500">Status</th>
-            <th className="pb-3 font-medium text-gray-500">Submitted</th>
+          <tr className="border-b border-slate-800">
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Company
+            </th>
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Role
+            </th>
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Country
+            </th>
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Salary
+            </th>
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Status
+            </th>
+            <th className="pb-3 pr-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Date
+            </th>
             <th className="pb-3" />
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-800/50">
           {records.map((record) => (
-            <tr key={record.id} className="border-b border-gray-100 last:border-0">
-              <td className="py-3 pr-4 text-gray-900">
-                {MONTH_NAMES[record.month]} {record.year}
+            <tr key={record.id} className="group hover:bg-slate-800/30 transition-colors">
+              <td className="py-3.5 pr-4 font-medium text-slate-200">{record.company}</td>
+              <td className="py-3.5 pr-4 text-slate-400">{record.jobTitle}</td>
+              <td className="py-3.5 pr-4 text-slate-500">{record.country ?? "—"}</td>
+              <td className="py-3.5 pr-4 font-semibold text-slate-200">
+                <span className="text-slate-500 text-xs mr-1">{record.currency}</span>
+                {(record.totalCompensation ?? record.baseSalary).toLocaleString()}
               </td>
-              <td className="py-3 pr-4 text-gray-900 font-medium">
-                {record.currency} {record.amount.toLocaleString()}
-              </td>
-              <td className="py-3 pr-4">
+              <td className="py-3.5 pr-4">
                 <StatusBadge status={record.status} />
               </td>
-              <td className="py-3 pr-4 text-gray-500">
-                {new Date(record.submittedAt).toLocaleDateString()}
+              <td className="py-3.5 pr-4 text-slate-500 text-xs">
+                {record.createdAt
+                  ? new Date(record.createdAt).toLocaleDateString()
+                  : "—"}
               </td>
-              <td className="py-3 text-right">
+              <td className="py-3.5 text-right">
                 <Link
                   to={`/salary/${record.id}`}
-                  className="text-blue-600 hover:underline text-xs"
+                  className="text-indigo-400 hover:text-indigo-300 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  View
+                  View →
                 </Link>
               </td>
             </tr>

@@ -19,6 +19,9 @@ spec:
         - name: frontend
           image: techsalary-local/frontend:latest
           imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              value: "80"
           ports:
             - containerPort: 80
           readinessProbe:

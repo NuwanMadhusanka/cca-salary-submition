@@ -31,7 +31,8 @@ public class JwtService {
      */
     public String generateToken(Long userId) {
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))   
+                .setSubject(String.valueOf(userId))
+                .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(signingKey)

@@ -37,7 +37,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthServiceLoginResponse response = authService.login(request);
-        LoginResponse loginResponse = new LoginResponse(response.getUserId(),response.getUsername());
+        LoginResponse loginResponse = new LoginResponse(
+                response.getUserId(), response.getUsername(), response.getToken());
         return ResponseEntity.ok()
                 .header("Authorization", "Bearer " + response.getToken())
                 .body(loginResponse);

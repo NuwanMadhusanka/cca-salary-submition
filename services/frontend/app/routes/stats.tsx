@@ -1,43 +1,41 @@
 import { useState, useEffect } from "react";
-import { Card } from "~/components/ui/Card";
 import { Spinner } from "~/components/ui/Spinner";
 import { Alert } from "~/components/ui/Alert";
 import { StatCard } from "~/components/salary/StatCard";
-import { StatusBadge } from "~/components/salary/StatusBadge";
 import { api } from "~/lib/api";
-import type { SalaryRecord } from "~/types";
+import type { SalaryStats } from "~/types";
 
 export function meta() {
   return [{ title: "Stats | Salary Portal" }];
 }
 
-const MONTH_NAMES = [
-  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+function fmt(value?: number, currency?: string) {
+  if (value === undefined || value === null) return "—";
+  const prefix = currency ? `${currency} ` : "";
+  return `${prefix}${Number(value).toLocaleString()}`;
+}
 
 export default function Stats() {
-  const [records, setRecords] = useState<SalaryRecord[]>([]);
+  const [stats, setStats] = useState<SalaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
-      .get<SalaryRecord[]>("/salaries")
-      .then(setRecords)
+      .get<SalaryStats>("/api/stats")
+      .then(setStats)
       .catch((err) => setError(err.message ?? "Failed to load stats"))
       .finally(() => setLoading(false));
   }, []);
 
-  const amounts = records.map((r) => r.amount);
-  const average = amounts.length
-    ? Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length)
-    : 0;
-  const highest = amounts.length ? Math.max(...amounts) : 0;
-
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Statistics</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Statistics</h1>
+        <p className="text-slate-500 text-sm mt-0.5">
+          Compensation insights from approved submissions
+        </p>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
@@ -45,47 +43,74 @@ export default function Stats() {
         </div>
       ) : error ? (
         <Alert message={error} />
-      ) : (
+      ) : stats ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatCard label="Average Salary" value={`LKR ${average.toLocaleString()}`} />
-            <StatCard label="Highest Salary" value={`LKR ${highest.toLocaleString()}`} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Sample Size" value={stats.sampleSize ?? 0} />
+            <StatCard
+              label="Average Salary"
+              value={fmt(stats.averageSalary, stats.currency)}
+              valueClassName="text-indigo-400"
+            />
+            <StatCard
+              label="Median Salary"
+              value={fmt(stats.medianSalary, stats.currency)}
+              valueClassName="text-indigo-400"
+            />
+            <StatCard
+              label="Highest Salary"
+              value={fmt(stats.maxSalary, stats.currency)}
+              valueClassName="text-emerald-400"
+            />
           </div>
 
-          <Card>
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Monthly Breakdown</h2>
-            {records.length === 0 ? (
-              <p className="text-sm text-gray-500">No data available.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="pb-3 pr-4 font-medium text-gray-500">Period</th>
-                      <th className="pb-3 pr-4 font-medium text-gray-500">Amount</th>
-                      <th className="pb-3 font-medium text-gray-500">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((record) => (
-                      <tr key={record.id} className="border-b border-gray-100 last:border-0">
-                        <td className="py-3 pr-4 text-gray-900">
-                          {MONTH_NAMES[record.month]} {record.year}
-                        </td>
-                        <td className="py-3 pr-4 font-medium text-gray-900">
-                          {record.currency} {record.amount.toLocaleString()}
-                        </td>
-                        <td className="py-3">
-                          <StatusBadge status={record.status} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800">
+              <h2 className="text-base font-semibold text-white">Salary Distribution</h2>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                    Percentile
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">
+                    Value
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {[
+                  { label: "Minimum", value: stats.minSalary, highlight: false },
+                  { label: "25th Percentile", value: stats.percentile25, highlight: false },
+                  { label: "Median (50th)", value: stats.medianSalary, highlight: true },
+                  { label: "75th Percentile", value: stats.percentile75, highlight: false },
+                  { label: "90th Percentile", value: stats.percentile90, highlight: false },
+                  { label: "Maximum", value: stats.maxSalary, highlight: false },
+                ].map(({ label, value, highlight }) => (
+                  <tr key={label} className={highlight ? "bg-indigo-950/20" : ""}>
+                    <td
+                      className={`px-6 py-3.5 ${
+                        highlight ? "text-indigo-300 font-medium" : "text-slate-400"
+                      }`}
+                    >
+                      {label}
+                    </td>
+                    <td
+                      className={`px-6 py-3.5 text-right font-semibold ${
+                        highlight ? "text-indigo-400" : "text-slate-200"
+                      }`}
+                    >
+                      {fmt(value, stats.currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
+      ) : (
+        <Alert message="No statistics available." />
       )}
     </div>
   );

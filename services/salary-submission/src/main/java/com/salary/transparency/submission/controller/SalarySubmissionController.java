@@ -3,6 +3,7 @@ package com.salary.transparency.submission.controller;
 import com.salary.transparency.submission.dto.HealthResponse;
 import com.salary.transparency.submission.dto.SalarySubmissionRequest;
 import com.salary.transparency.submission.dto.SalarySubmissionResponse;
+import com.salary.transparency.submission.dto.StatusUpdateRequest;
 import com.salary.transparency.submission.service.SalarySubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/salary-submissions")
@@ -58,6 +60,33 @@ public class SalarySubmissionController {
         log.info("Received request for salary submission ID: {}", submissionId);
 
         SalarySubmissionResponse response = salarySubmissionService.getSubmission(submissionId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    @Operation(summary = "List salary submissions", description = "Retrieve salary submissions with optional filters")
+    public ResponseEntity<List<SalarySubmissionResponse>> listSubmissions(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) String country) {
+
+        log.info("Listing salary submissions: status={}, company={}, country={}", status, company, country);
+
+        List<SalarySubmissionResponse> responses = salarySubmissionService.listSubmissions(status, company, country);
+
+        return ResponseEntity.ok(responses);
+    }
+
+    @PatchMapping("/{submissionId}/status")
+    @Operation(summary = "Update submission status", description = "Update status of a salary submission (used by vote service for auto-approval)")
+    public ResponseEntity<SalarySubmissionResponse> updateStatus(
+            @PathVariable Long submissionId,
+            @RequestBody StatusUpdateRequest request) {
+
+        log.info("Updating status for salary submission ID: {} to {}", submissionId, request.getStatus());
+
+        SalarySubmissionResponse response = salarySubmissionService.updateStatus(submissionId, request.getStatus());
 
         return ResponseEntity.ok(response);
     }

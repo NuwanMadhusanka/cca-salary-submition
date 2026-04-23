@@ -2,6 +2,9 @@
   "name": "frontend",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
@@ -12,8 +15,8 @@
     "@react-router/node": "7.12.0",
     "@react-router/serve": "7.12.0",
     "isbot": "^5.1.31",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "react-router": "7.12.0"
   },
   "devDependencies": {

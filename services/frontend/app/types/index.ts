@@ -1,24 +1,42 @@
 export interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
-  role: "employee" | "admin";
 }
 
 export interface SalaryRecord {
-  id: string;
-  userId: string;
-  amount: number;
+  id: number;
+  company: string;
+  jobTitle: string;
+  location?: string;
+  country?: string;
+  city?: string;
+  yearsOfExperience?: number;
+  experienceLevel?: string;
+  baseSalary: number;
+  bonus?: number;
+  stockOptions?: number;
+  otherCompensation?: number;
+  totalCompensation?: number;
   currency: string;
-  month: number;
-  year: number;
-  status: "pending" | "approved" | "rejected";
-  submittedAt: string;
+  employmentType?: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  approvedAt?: string;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
+export interface SalaryStats {
+  sampleSize: number;
+  minSalary: number;
+  maxSalary: number;
+  averageSalary: number;
+  medianSalary: number;
+  percentile25: number;
+  percentile75: number;
+  percentile90: number;
+  currency?: string;
+  filters?: Record<string, string>;
 }
 
 export interface ApiError {

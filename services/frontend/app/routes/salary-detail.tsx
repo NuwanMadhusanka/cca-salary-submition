@@ -19,7 +19,7 @@ export default function SalaryDetail() {
 
   useEffect(() => {
     api
-      .get<SalaryRecord>(`/salaries/${id}`)
+      .get<SalaryRecord>(`/api/submissions/${id}`)
       .then(setRecord)
       .catch((err) => setError(err.message ?? "Failed to load record"))
       .finally(() => setLoading(false));
@@ -27,16 +27,18 @@ export default function SalaryDetail() {
 
   return (
     <div className="max-w-lg flex flex-col gap-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Link to="/">
-          <Button variant="secondary">← Back</Button>
+          <Button variant="secondary" size="sm">
+            ← Back
+          </Button>
         </Link>
-        <h1 className="text-2xl font-semibold text-gray-900">Salary Detail</h1>
+        <h1 className="text-2xl font-bold text-white">Salary Detail</h1>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Spinner />
+          <Spinner size="lg" />
         </div>
       ) : error ? (
         <Alert message={error} />

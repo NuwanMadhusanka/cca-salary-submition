@@ -1,20 +1,24 @@
 -- =============================================================================
--- db/init.sql (CORRECTED)
+-- db/init.sql
 -- Tech Salary Transparency Platform — Complete Database Initialization
--- Assumes databases already exist (salarydb, vote_db, search_db)
--- =============================================================================
-
--- =============================================================================
--- DATABASE 1: salarydb (Primary application data)
+-- ALL data in one database: salarydb
+--   identity schema  — users, refresh_tokens
+--   salary schema    — salary_submissions
+--   public schema    — votes, vote_counts  (vote service uses bare table names)
 -- =============================================================================
 
 \c salarydb
 
+-- =============================================================================
+-- SCHEMA SETUP
+-- =============================================================================
+
 CREATE SCHEMA IF NOT EXISTS identity;
 CREATE SCHEMA IF NOT EXISTS salary;
+-- votes tables go into public (PostgreSQL default search_path includes public)
 
 -- =============================================================================
--- SCHEMA: identity (Identity Service)
+-- SCHEMA: identity  (Identity Service)
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS identity.users (
@@ -60,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_identity_refresh_user  ON identity.refresh_tokens
 CREATE INDEX IF NOT EXISTS idx_identity_refresh_token ON identity.refresh_tokens (token);
 
 -- =============================================================================
--- SCHEMA: salary (Salary Submission + Stats Service)
+-- SCHEMA: salary  (Salary Submission + Stats + Search Services)
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS salary.salary_submissions (
@@ -136,71 +140,8 @@ CREATE TRIGGER trg_submissions_approved_at
     FOR EACH ROW EXECUTE FUNCTION salary.fn_set_approved_at();
 
 -- =============================================================================
--- MATERIALIZED VIEWS for Stats Service
+-- SCHEMA: public  (Vote Service — uses bare table names resolved via search_path)
 -- =============================================================================
-
-CREATE MATERIALIZED VIEW IF NOT EXISTS salary.salary_statistics_by_experience AS
-SELECT
-    country,
-    experience_level,
-    COUNT(*) as count,
-    AVG(total_compensation) as avg_salary,
-    MIN(total_compensation) as min_salary,
-    MAX(total_compensation) as max_salary,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_compensation) as median_salary,
-    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_compensation) as p75_salary
-FROM salary.salary_submissions
-WHERE status = 'APPROVED'
-GROUP BY country, experience_level;
-
-CREATE MATERIALIZED VIEW IF NOT EXISTS salary.salary_statistics_by_role AS
-SELECT
-    job_title,
-    company,
-    country,
-    experience_level,
-    COUNT(*) as count,
-    AVG(total_compensation) as avg_salary,
-    MIN(total_compensation) as min_salary,
-    MAX(total_compensation) as max_salary,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_compensation) as median_salary
-FROM salary.salary_submissions
-WHERE status = 'APPROVED'
-GROUP BY job_title, company, country, experience_level;
-
--- =============================================================================
--- SAMPLE DATA for Testing (Optional — comment out if not needed)
--- =============================================================================
-
--- Sample users for identity service
-INSERT INTO identity.users (username, email, password, first_name, last_name, is_active)
-VALUES
-  ('alice_smith', 'alice@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Alice', 'Smith', TRUE),
-  ('bob_johnson', 'bob@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Bob', 'Johnson', TRUE),
-  ('carol_white', 'carol@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Carol', 'White', TRUE)
-ON CONFLICT (email) DO NOTHING;
-
--- Sample salary submissions
-INSERT INTO salary.salary_submissions
-(company, job_title, location, country, experience_level, base_salary, bonus, stock_options, currency, employment_type, anonymize, status)
-VALUES
-  ('Google', 'Software Engineer', 'Mountain View, CA', 'USA', 'MID', 200000, 50000, 100000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('Meta', 'Senior Backend Engineer', 'Menlo Park, CA', 'USA', 'SENIOR', 250000, 75000, 150000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('Amazon', 'Solutions Architect', 'Seattle, WA', 'USA', 'SENIOR', 220000, 60000, 120000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('Microsoft', 'Software Engineer 2', 'Redmond, WA', 'USA', 'JUNIOR', 160000, 40000, 80000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('Apple', 'Senior Software Engineer', 'Cupertino, CA', 'USA', 'SENIOR', 240000, 70000, 140000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('WSO2', 'Senior Software Engineer', 'Colombo', 'Sri Lanka', 'SENIOR', 150000, 30000, 0, 'LKR', 'Full-time', FALSE, 'APPROVED'),
-  ('Virtusa', 'Technical Lead', 'Colombo', 'Sri Lanka', 'SENIOR', 140000, 25000, 0, 'LKR', 'Full-time', FALSE, 'APPROVED'),
-  ('Synopsys', 'Senior Engineer', 'Mountain View, CA', 'USA', 'SENIOR', 230000, 65000, 130000, 'USD', 'Full-time', FALSE, 'APPROVED'),
-  ('TechCorp Lanka', 'Software Engineer', 'Colombo', 'Sri Lanka', 'MID', 100000, 20000, 0, 'LKR', 'Full-time', TRUE, 'PENDING'),
-  ('Netflix', 'Staff Engineer', 'Los Gatos, CA', 'USA', 'LEAD', 300000, 100000, 200000, 'USD', 'Full-time', FALSE, 'APPROVED')
-ON CONFLICT DO NOTHING;
-
--- =============================================================================
--- DATABASE 2: vote_db (Voting System)
--- =============================================================================
-
-\c vote_db
 
 CREATE TABLE IF NOT EXISTS public.votes (
     id            BIGSERIAL   PRIMARY KEY,
@@ -287,70 +228,43 @@ CREATE TRIGGER trg_votes_updated_at
     FOR EACH ROW EXECUTE FUNCTION public.fn_set_votes_updated_at();
 
 -- =============================================================================
--- DATABASE 3: search_db (Search Index)
+-- SAMPLE DATA
 -- =============================================================================
 
-\c search_db
+INSERT INTO identity.users (username, email, password, first_name, last_name, is_active)
+VALUES
+  ('alice_smith', 'alice@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Alice', 'Smith', TRUE),
+  ('bob_johnson', 'bob@example.com',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Bob',   'Johnson', TRUE),
+  ('carol_white', 'carol@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/tvQe', 'Carol', 'White',   TRUE)
+ON CONFLICT (email) DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS public.search_index (
-    id                  BIGSERIAL    PRIMARY KEY,
-    submission_id       BIGINT       NOT NULL UNIQUE,
-    company             VARCHAR(100),
-    job_title           VARCHAR(100),
-    location            VARCHAR(100),
-    country             VARCHAR(50),
-    city                VARCHAR(50),
-    years_of_experience INTEGER,
-    experience_level    VARCHAR(20),
-    base_salary         DECIMAL(12,2),
-    bonus               DECIMAL(12,2),
-    stock_options       DECIMAL(12,2),
-    total_compensation  DECIMAL(12,2),
-    currency            VARCHAR(10),
-    employment_type     VARCHAR(20),
-    anonymize           BOOLEAN      DEFAULT FALSE,
-    status              VARCHAR(20),
-    vote_count          INTEGER      DEFAULT 0,
-    created_at          TIMESTAMP,
-    indexed_at          TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    search_vector       tsvector     GENERATED ALWAYS AS (
-                            to_tsvector('english', COALESCE(company, '') || ' ' ||
-                                                    COALESCE(job_title, '') || ' ' ||
-                                                    COALESCE(country, ''))
-                        ) STORED
-);
-
-CREATE INDEX IF NOT EXISTS idx_search_status      ON public.search_index (status);
-CREATE INDEX IF NOT EXISTS idx_search_country     ON public.search_index (country);
-CREATE INDEX IF NOT EXISTS idx_search_exp_level   ON public.search_index (experience_level);
-CREATE INDEX IF NOT EXISTS idx_search_salary      ON public.search_index (total_compensation);
-CREATE INDEX IF NOT EXISTS idx_search_created_at  ON public.search_index (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_search_vector      ON public.search_index USING gin(search_vector);
+INSERT INTO salary.salary_submissions
+  (company, job_title, location, country, city, experience_level, base_salary, bonus, stock_options, currency, employment_type, anonymize, status)
+VALUES
+  ('Google',       'Software Engineer',      'Mountain View, CA', 'USA',       'Mountain View', 'MID',    200000, 50000,  100000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('Meta',         'Senior Backend Engineer','Menlo Park, CA',    'USA',       'Menlo Park',    'SENIOR', 250000, 75000,  150000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('Amazon',       'Solutions Architect',    'Seattle, WA',       'USA',       'Seattle',        'SENIOR', 220000, 60000,  120000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('Microsoft',    'Software Engineer 2',    'Redmond, WA',       'USA',       'Redmond',        'JUNIOR', 160000, 40000,   80000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('Apple',        'Senior Software Engineer','Cupertino, CA',    'USA',       'Cupertino',      'SENIOR', 240000, 70000,  140000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('WSO2',         'Senior Software Engineer','Colombo',          'Sri Lanka', 'Colombo',        'SENIOR', 150000, 30000,       0, 'LKR', 'Full-time', FALSE, 'APPROVED'),
+  ('Virtusa',      'Technical Lead',          'Colombo',          'Sri Lanka', 'Colombo',        'SENIOR', 140000, 25000,       0, 'LKR', 'Full-time', FALSE, 'APPROVED'),
+  ('Synopsys',     'Senior Engineer',         'Mountain View, CA','USA',       'Mountain View',  'SENIOR', 230000, 65000,  130000, 'USD', 'Full-time', FALSE, 'APPROVED'),
+  ('TechCorp Lanka','Software Engineer',      'Colombo',          'Sri Lanka', 'Colombo',        'MID',    100000, 20000,       0, 'LKR', 'Full-time', TRUE,  'PENDING'),
+  ('Netflix',      'Staff Engineer',          'Los Gatos, CA',    'USA',       'Los Gatos',      'LEAD',   300000,100000,  200000, 'USD', 'Full-time', FALSE, 'APPROVED')
+ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- VERIFICATION
 -- =============================================================================
 
-\c salarydb
 \echo ''
-\echo '===== INITIALIZATION COMPLETE ====='
+\echo '===== INITIALIZATION COMPLETE (salarydb) ====='
 \echo ''
-\echo 'Database: salarydb'
 \dn
 \echo ''
 \dt identity.*
 \dt salary.*
-
-\c vote_db
-\echo ''
-\echo 'Database: vote_db'
 \dt public.votes
 \dt public.vote_counts
-
-\c search_db
 \echo ''
-\echo 'Database: search_db'
-\dt public.search_index
-
-\echo ''
-\echo '✓ All 3 databases initialized successfully!'
+\echo 'All schemas and tables initialized in salarydb.'

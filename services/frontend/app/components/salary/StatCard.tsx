@@ -1,16 +1,14 @@
-import { Card } from "~/components/ui/Card";
-
 interface StatCardProps {
   label: string;
   value: string | number;
   valueClassName?: string;
 }
 
-export function StatCard({ label, value, valueClassName = "text-gray-900" }: StatCardProps) {
+export function StatCard({ label, value, valueClassName = "text-white" }: StatCardProps) {
   return (
-    <Card>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${valueClassName}`}>{value}</p>
-    </Card>
+    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col gap-2">
+      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
+      <p className={`text-3xl font-bold tracking-tight ${valueClassName}`}>{value}</p>
+    </div>
   );
 }

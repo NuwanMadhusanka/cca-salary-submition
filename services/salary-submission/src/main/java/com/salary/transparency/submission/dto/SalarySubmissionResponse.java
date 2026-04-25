@@ -28,6 +28,7 @@ public class SalarySubmissionResponse {
     private BigDecimal totalCompensation;
     private String currency;
     private String employmentType;
+    private Boolean anonymize;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

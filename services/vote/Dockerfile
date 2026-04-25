@@ -31,11 +31,11 @@ RUN chown -R voteservice:nodejs /app
 USER voteservice
 
 # Expose port
-EXPOSE 3005
+EXPOSE 8083
 
-# Health check
+# Health check — PORT is injected by K8s (default 8083)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT||8083) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Set environment to production
 ENV NODE_ENV=production

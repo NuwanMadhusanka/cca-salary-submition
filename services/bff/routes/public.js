@@ -92,6 +92,21 @@ router.post('/auth/login', async (req, res) => {
 });
 
 /**
+ * GET /api/submissions
+ * List salary submissions (optionally filtered by status/company/country)
+ */
+router.get('/submissions', async (req, res) => {
+  try {
+    const queryString = new URLSearchParams(req.query).toString();
+    const path = `/api/salary-submissions${queryString ? '?' + queryString : ''}`;
+    const response = await proxyRequest(SALARY_URL, path, 'GET');
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.status || 500).json(error.data);
+  }
+});
+
+/**
  * POST /api/submissions
  * Forward to Salary Submission Service (public - anonymous submissions allowed)
  */

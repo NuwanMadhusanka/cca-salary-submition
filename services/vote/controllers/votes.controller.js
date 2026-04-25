@@ -85,7 +85,7 @@ const createVote = async (req, res) => {
       try {
         // Call Salary Submission Service to update status
         const salaryServiceResponse = await axios.patch(
-          `${SALARY_SERVICE_URL}/submissions/${submission_id}/status`,
+          `${SALARY_SERVICE_URL}/api/salary-submissions/${submission_id}/status`,
           { status: 'APPROVED' },
           {
             headers: { 'Content-Type': 'application/json' },

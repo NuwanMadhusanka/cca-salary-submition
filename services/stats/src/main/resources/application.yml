@@ -12,6 +12,10 @@ spring:
       minimum-idle: 5
       connection-timeout: 30000
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -23,7 +27,7 @@ spring:
         format_sql: true
 
 server:
-  port: ${SERVICE_PORT:8081}
+  port: ${SERVER_PORT:${SERVICE_PORT:8085}}
 
 management:
   endpoints:

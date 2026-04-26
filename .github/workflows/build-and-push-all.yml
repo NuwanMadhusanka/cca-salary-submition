@@ -138,6 +138,9 @@ jobs:
           push: true
           # Tag format: nuwan1998/cca-salary-submition:bff-202604261119
           tags: ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ needs.detect-changes.outputs.image_tag }}
+          # Pass VITE_API_URL only for frontend — ignored by other Dockerfiles
+          build-args: |
+            VITE_API_URL=${{ matrix.service == 'frontend' && secrets.VITE_API_URL || '' }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -177,8 +180,7 @@ jobs:
           # Write kubeconfig using env vars — safe, no shell interpretation issues
           kubectl config set-cluster microk8s \
             --server="${KUBE_API_SERVER}" \
-            --certificate-authority=<(echo "${KUBE_CA_CERT}" | base64 -d) \
-            --embed-certs=true
+            --insecure-skip-tls-verify=true
 
           kubectl config set-credentials github-actions \
             --token="${KUBE_TOKEN}"

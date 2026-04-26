@@ -18,8 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
+      image_tag: ${{ steps.tag.outputs.value }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Generate image tag
+        id: tag
+        run: echo "value=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
 
       - name: Detect changed services
         uses: dorny/paths-filter@v3
@@ -74,8 +79,6 @@ jobs:
         with:
           context: services/${{ matrix.service }}
           push: true
-          tags: |
-            ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-latest
-            ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ steps.tag.outputs.value }}
+          tags: ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ needs.detect-changes.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

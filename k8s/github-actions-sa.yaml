@@ -1,13 +1,10 @@
 ---
-# github-actions-sa.yaml
-# ServiceAccount for GitHub Actions to deploy to the 'app' namespace
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: github-actions
   namespace: app
 ---
-# Gives the ServiceAccount permission to manage deployments, pods, and services in 'app' namespace
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -24,7 +21,6 @@ rules:
     resources: ["ingresses"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
-# Binds the Role to the ServiceAccount
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -37,4 +33,4 @@ subjects:
 roleRef:
   kind: Role
   name: github-actions-deployer
-  apiVersion: rbac.authorization.k8s.io/v1
+  apiGroup: rbac.authorization.k8s.io

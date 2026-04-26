@@ -2,7 +2,7 @@
 # =============================================================================
 # EC2 User Data Script - MicroK8s Cluster Bootstrap
 # OS: Ubuntu 22.04 / 24.04 LTS
-# Repo: https://github.com/NuwanMadhusanka/cca-salary-submition.git
+# Repo: https://github.com/RumeshMadush/cca-salary-submition
 # Branch: ci_cd_pipeline_setup
 # =============================================================================
 
@@ -38,10 +38,8 @@ apt-get install -y \
 # -----------------------------------------------
 echo "[2/8] Installing Docker..."
 
-# Remove old versions
 apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
 
-# Add Docker's official GPG key and repo
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
     gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -208,7 +206,7 @@ fi
 echo "PostgreSQL is ready."
 
 echo "Init PostgreSQL DB..."
-./scripts/m1/init-db.sh
+bash ./scripts/m1/init-db.sh
 
 echo "Applying app config and secrets..."
 kubectl apply -f k8s/configmap/configmap.yaml
@@ -249,7 +247,20 @@ if [ -z "$TOKEN" ]; then
     exit 1
 fi
 
-EC2_PUBLIC_IP=$(curl -s http://43.204.109.217/latest/meta-data/public-ipv4 || echo "unavailable")
+# FIX: Use the correct AWS IMDSv2 metadata endpoint — NOT a hardcoded IP
+# Step 1: get a session token (IMDSv2 requirement)
+IMDS_TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || echo "")
+
+# Step 2: use the token to get the public IP
+if [ -n "$IMDS_TOKEN" ]; then
+    EC2_PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" \
+        http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unavailable")
+else
+    # Fallback to IMDSv1
+    EC2_PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unavailable")
+fi
+
 API_SERVER_EXTERNAL="https://${EC2_PUBLIC_IP}:16443"
 CA_CERT=$(kubectl get secret github-actions-token -n app -o jsonpath='{.data.ca\.crt}')
 

@@ -177,8 +177,7 @@ jobs:
           # Write kubeconfig using env vars — safe, no shell interpretation issues
           kubectl config set-cluster microk8s \
             --server="${KUBE_API_SERVER}" \
-            --certificate-authority=<(echo "${KUBE_CA_CERT}" | base64 -d) \
-            --embed-certs=true
+            --insecure-skip-tls-verify=true
 
           kubectl config set-credentials github-actions \
             --token="${KUBE_TOKEN}"

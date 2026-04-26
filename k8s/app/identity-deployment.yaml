@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: identity
-          image: techsalary-local/identity:latest
+          image: nuwan1998/cca-salary-submition:identity-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082

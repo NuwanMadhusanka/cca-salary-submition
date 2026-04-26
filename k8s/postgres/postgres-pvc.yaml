@@ -4,7 +4,7 @@ metadata:
   name: postgres-pvc
   namespace: data
 spec:
-  storageClassName: local-path
+  storageClassName: microk8s-hostpath
   accessModes:
     - ReadWriteOnce
   resources:

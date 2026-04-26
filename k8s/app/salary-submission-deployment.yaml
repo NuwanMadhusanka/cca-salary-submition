@@ -33,6 +33,13 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secret
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "600m"
+              memory: "768Mi"
           readinessProbe:
             tcpSocket:
               port: 8081

@@ -10,6 +10,7 @@ on:
 env:
   REGISTRY: docker.io
   DOCKERHUB_USERNAME: nuwan1998
+  DOCKERHUB_REPO: nuwan1998/cca-salary-submition
 
 jobs:
   detect-changes:
@@ -74,7 +75,7 @@ jobs:
           context: services/${{ matrix.service }}
           push: true
           tags: |
-            ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
-            ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ steps.tag.outputs.value }}
+            ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-latest
+            ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ steps.tag.outputs.value }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

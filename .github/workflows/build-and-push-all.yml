@@ -83,7 +83,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.services }}" ]; then
             # Manual trigger with no services specified — deploy ALL
             SERVICES="${{ env.ALL_SERVICES }}"
-            echo "Manual trigger (no input) — deploying all services: $SERVICES"
+            echo "Manual trigger (no input) — deploying all: $SERVICES"
           else
             # Push trigger — use dorny/paths-filter output
             SERVICES='${{ steps.filter.outputs.changes }}'
@@ -105,7 +105,7 @@ jobs:
           echo "skip_build=${{ github.event.inputs.skip_build || 'false' }}" >> $GITHUB_OUTPUT
 
   # -------------------------------------------------------
-  # JOB 2: Build & push — skipped if skip_build=true
+  # JOB 2: Build & push
   # -------------------------------------------------------
   build-and-push:
     name: Build & Push - ${{ matrix.service }}
@@ -164,20 +164,34 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Configure kubeconfig
+        # KEY FIX: use env vars to pass secrets into shell safely
+        # Never use heredoc with GitHub secrets — the ${{ }} gets evaluated
+        # as a shell command if the heredoc delimiter is unquoted
+        env:
+          KUBE_API_SERVER: ${{ secrets.KUBE_API_SERVER }}
+          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
+          KUBE_CA_CERT: ${{ secrets.KUBE_CA_CERT }}
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CA_CERT }}" | base64 -d > /tmp/ca.crt
+
+          # Write kubeconfig using env vars — safe, no shell interpretation issues
           kubectl config set-cluster microk8s \
-            --server=${{ secrets.KUBE_API_SERVER }} \
-            --certificate-authority=/tmp/ca.crt \
+            --server="${KUBE_API_SERVER}" \
+            --certificate-authority=<(echo "${KUBE_CA_CERT}" | base64 -d) \
             --embed-certs=true
+
           kubectl config set-credentials github-actions \
-            --token=${{ secrets.KUBE_TOKEN }}
+            --token="${KUBE_TOKEN}"
+
           kubectl config set-context microk8s \
             --cluster=microk8s \
             --user=github-actions \
             --namespace=app
+
           kubectl config use-context microk8s
+
+          chmod 600 $HOME/.kube/config
+          echo "Kubeconfig written successfully."
 
       - name: Verify cluster connection
         run: |
@@ -239,6 +253,6 @@ jobs:
           echo " Tag: ${{ needs.detect-changes.outputs.image_tag }}"
           echo " Services: ${{ needs.detect-changes.outputs.services }}"
           echo "=============================="
-          kubectl get pods -n app
-          kubectl get pods -n data
-          kubectl get ingress -n app
+          kubectl --kubeconfig=$HOME/.kube/config get pods -n app    || echo "Could not reach cluster"
+          kubectl --kubeconfig=$HOME/.kube/config get pods -n data   || echo "Could not reach cluster"
+          kubectl --kubeconfig=$HOME/.kube/config get ingress -n app || echo "Could not reach cluster"

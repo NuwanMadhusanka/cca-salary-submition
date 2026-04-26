@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: stats
-          image: nuwan1998/cca-salary-submition:stats-latest
+          image: nuwan1998/cca-salary-submition:stats-202604261119
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8085

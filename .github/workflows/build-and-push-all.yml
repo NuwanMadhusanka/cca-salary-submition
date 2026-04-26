@@ -13,6 +13,9 @@ env:
   DOCKERHUB_REPO: nuwan1998/cca-salary-submition
 
 jobs:
+  # -------------------------------------------------------
+  # JOB 1: Detect which services changed — unchanged
+  # -------------------------------------------------------
   detect-changes:
     name: Detect Changed Services
     runs-on: ubuntu-latest
@@ -46,6 +49,9 @@ jobs:
             vote:
               - 'services/vote/**'
 
+  # -------------------------------------------------------
+  # JOB 2: Build & push per service matrix — unchanged
+  # -------------------------------------------------------
   build-and-push:
     name: Build & Push - ${{ matrix.service }}
     runs-on: ubuntu-latest
@@ -70,15 +76,108 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Generate image tag
-        id: tag
-        run: echo "value=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
-
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
           context: services/${{ matrix.service }}
           push: true
+          # Tag format: nuwan1998/cca-salary-submition:bff-202604261119
           tags: ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ needs.detect-changes.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # -------------------------------------------------------
+  # JOB 3: Deploy to MicroK8s
+  # -------------------------------------------------------
+  deploy:
+    name: Deploy to MicroK8s (EC2)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push]
+    if: ${{ needs.detect-changes.outputs.services != '[]' && github.event_name != 'pull_request' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CA_CERT }}" | base64 -d > /tmp/ca.crt
+          kubectl config set-cluster microk8s \
+            --server=${{ secrets.KUBE_API_SERVER }} \
+            --certificate-authority=/tmp/ca.crt \
+            --embed-certs=true
+          kubectl config set-credentials github-actions \
+            --token=${{ secrets.KUBE_TOKEN }}
+          kubectl config set-context microk8s \
+            --cluster=microk8s \
+            --user=github-actions \
+            --namespace=app
+          kubectl config use-context microk8s
+
+      - name: Verify cluster connection
+        run: |
+          kubectl get nodes
+          kubectl get pods -n app
+
+      - name: Apply k8s manifests for changed services only
+        run: |
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
+          TAG="${{ needs.detect-changes.outputs.image_tag }}"
+
+          # Map each service name to its deployment file
+          declare -A DEPLOYMENT_FILES
+          DEPLOYMENT_FILES["bff"]="k8s/app/bff-deployment.yaml"
+          DEPLOYMENT_FILES["frontend"]="k8s/app/frontend-deployment.yaml"
+          DEPLOYMENT_FILES["identity"]="k8s/app/identity-deployment.yaml"
+          DEPLOYMENT_FILES["salary-submission"]="k8s/app/salary-submission-deployment.yaml"
+          DEPLOYMENT_FILES["search"]="k8s/app/search-deployment.yaml"
+          DEPLOYMENT_FILES["stats"]="k8s/app/stats-deployment.yaml"
+          DEPLOYMENT_FILES["vote"]="k8s/app/vote-deployment.yaml"
+
+          echo "$SERVICES" | jq -r '.[]' | while read svc; do
+            FILE="${DEPLOYMENT_FILES[$svc]}"
+            if [ -f "$FILE" ]; then
+              echo "Applying manifest: $FILE"
+              kubectl apply -f "$FILE"
+            else
+              echo "Warning: manifest not found for $svc at $FILE"
+            fi
+          done
+
+      - name: Update image tags for changed services
+        run: |
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
+          TAG="${{ needs.detect-changes.outputs.image_tag }}"
+
+          echo "$SERVICES" | jq -r '.[]' | while read svc; do
+            IMAGE="${{ env.DOCKERHUB_REPO }}:${svc}-${TAG}"
+            echo "Updating $svc → $IMAGE"
+            kubectl set image deployment/${svc} \
+              ${svc}=${IMAGE} \
+              -n app
+          done
+
+      - name: Wait for rollouts
+        run: |
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
+
+          echo "$SERVICES" | jq -r '.[]' | while read svc; do
+            echo "Waiting for rollout: $svc ..."
+            kubectl rollout status deployment/${svc} \
+              -n app \
+              --timeout=180s
+          done
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "=============================="
+          echo " Deployment Summary"
+          echo "=============================="
+          kubectl get pods -n app
+          kubectl get pods -n data
+          kubectl get ingress -n app

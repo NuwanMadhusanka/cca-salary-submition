@@ -82,3 +82,55 @@ jobs:
           tags: ${{ env.DOCKERHUB_REPO }}:${{ matrix.service }}-${{ needs.detect-changes.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    name: Deploy to MicroK8s (EC2)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push]
+    if: ${{ needs.detect-changes.outputs.services != '[]' && github.event_name != 'pull_request' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig via K8s API token
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CA_CERT }}" | base64 -d > /tmp/ca.crt
+          kubectl config set-cluster microk8s \
+            --server=${{ secrets.KUBE_API_SERVER }} \
+            --certificate-authority=/tmp/ca.crt
+          kubectl config set-credentials github-actions \
+            --token=${{ secrets.KUBE_TOKEN }}
+          kubectl config set-context microk8s \
+            --cluster=microk8s \
+            --user=github-actions \
+            --namespace=app
+          kubectl config use-context microk8s
+
+      - name: Verify cluster connection
+        run: kubectl get nodes
+
+      - name: Apply app deployments
+        run: kubectl apply -f k8s/app/
+
+      - name: Update image tags and deploy
+        run: |
+          SERVICES="${{ join(fromJson(needs.detect-changes.outputs.services), ' ') }}"
+          TAG="${{ needs.detect-changes.outputs.image_tag }}"
+          for svc in $SERVICES; do
+            echo "Updating $svc to tag $TAG"
+            kubectl set image deployment/$svc \
+              $svc=${{ env.DOCKERHUB_REPO }}:${svc}-${TAG} \
+              -n app
+          done
+
+      - name: Wait for rollouts
+        run: |
+          SERVICES="${{ join(fromJson(needs.detect-changes.outputs.services), ' ') }}"
+          for svc in $SERVICES; do
+            kubectl rollout status deployment/$svc -n app --timeout=120s
+          done

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: vote
-          image: nuwan1998/cca-salary-submition:vote-latest
+          image: nuwan1998/cca-salary-submition:vote-202604261119
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8083

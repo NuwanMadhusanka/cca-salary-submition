@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: search
-          image: nuwan1998/cca-salary-submition:search-latest
+          image: nuwan1998/cca-salary-submition:search-202604261119
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8084

@@ -5,33 +5,54 @@ on:
     branches: [ ci_cd_pipeline_setup, main ]
     paths:
       - 'services/**'
+
+  # -------------------------------------------------------
+  # Manual trigger — pick services and optional tag
+  # -------------------------------------------------------
   workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to build & deploy (comma-separated). Leave empty to auto-detect from changed files. Example: bff,identity,frontend'
+        required: false
+        default: ''
+      image_tag:
+        description: 'Custom image tag (e.g. 202604261119). Leave empty to auto-generate timestamp tag.'
+        required: false
+        default: ''
+      skip_build:
+        description: 'Skip build and deploy existing image tag only (true/false)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 env:
   REGISTRY: docker.io
   DOCKERHUB_USERNAME: nuwan1998
   DOCKERHUB_REPO: nuwan1998/cca-salary-submition
+  ALL_SERVICES: '["bff","frontend","identity","salary-submission","search","stats","vote"]'
 
 jobs:
   # -------------------------------------------------------
-  # JOB 1: Detect which services changed — unchanged
+  # JOB 1: Detect which services changed OR use manual input
   # -------------------------------------------------------
   detect-changes:
     name: Detect Changed Services
     runs-on: ubuntu-latest
     outputs:
-      services: ${{ steps.filter.outputs.changes }}
-      image_tag: ${{ steps.tag.outputs.value }}
+      services: ${{ steps.resolve.outputs.services }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      skip_build: ${{ steps.resolve.outputs.skip_build }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate image tag
-        id: tag
-        run: echo "value=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
-
-      - name: Detect changed services
+      - name: Detect changed services (auto — push trigger only)
         uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'push'
         with:
           filters: |
             bff:
@@ -49,14 +70,48 @@ jobs:
             vote:
               - 'services/vote/**'
 
+      - name: Resolve services and tag
+        id: resolve
+        run: |
+          # ---- Resolve which services to process ----
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.services }}" ]; then
+            # Manual input — convert comma-separated string to JSON array
+            # e.g. "bff,identity" → ["bff","identity"]
+            INPUT="${{ github.event.inputs.services }}"
+            SERVICES=$(echo "$INPUT" | tr ',' '\n' | tr -d ' ' | jq -R . | jq -cs .)
+            echo "Manual trigger — services: $SERVICES"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.services }}" ]; then
+            # Manual trigger with no services specified — deploy ALL
+            SERVICES="${{ env.ALL_SERVICES }}"
+            echo "Manual trigger (no input) — deploying all services: $SERVICES"
+          else
+            # Push trigger — use dorny/paths-filter output
+            SERVICES='${{ steps.filter.outputs.changes }}'
+            echo "Push trigger — changed services: $SERVICES"
+          fi
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+          # ---- Resolve image tag ----
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            TAG="${{ github.event.inputs.image_tag }}"
+            echo "Using custom tag: $TAG"
+          else
+            TAG="$(date +'%Y%m%d%H%M')"
+            echo "Generated tag: $TAG"
+          fi
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+
+          # ---- Skip build flag ----
+          echo "skip_build=${{ github.event.inputs.skip_build || 'false' }}" >> $GITHUB_OUTPUT
+
   # -------------------------------------------------------
-  # JOB 2: Build & push per service matrix — unchanged
+  # JOB 2: Build & push — skipped if skip_build=true
   # -------------------------------------------------------
   build-and-push:
     name: Build & Push - ${{ matrix.service }}
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.services != '[]' }}
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.skip_build == 'false' }}
 
     strategy:
       fail-fast: false
@@ -88,12 +143,18 @@ jobs:
 
   # -------------------------------------------------------
   # JOB 3: Deploy to MicroK8s
+  # Runs after build-and-push, OR directly if skip_build=true
   # -------------------------------------------------------
   deploy:
     name: Deploy to MicroK8s (EC2)
     runs-on: ubuntu-latest
     needs: [detect-changes, build-and-push]
-    if: ${{ needs.detect-changes.outputs.services != '[]' && github.event_name != 'pull_request' }}
+    # Run if build succeeded OR if build was skipped (skip_build=true)
+    if: |
+      always() &&
+      needs.detect-changes.outputs.services != '[]' &&
+      github.event_name != 'pull_request' &&
+      (needs.build-and-push.result == 'success' || needs.detect-changes.outputs.skip_build == 'true')
 
     steps:
       - name: Checkout code
@@ -123,12 +184,10 @@ jobs:
           kubectl get nodes
           kubectl get pods -n app
 
-      - name: Apply k8s manifests for changed services only
+      - name: Apply k8s manifests for selected services
         run: |
           SERVICES='${{ needs.detect-changes.outputs.services }}'
-          TAG="${{ needs.detect-changes.outputs.image_tag }}"
 
-          # Map each service name to its deployment file
           declare -A DEPLOYMENT_FILES
           DEPLOYMENT_FILES["bff"]="k8s/app/bff-deployment.yaml"
           DEPLOYMENT_FILES["frontend"]="k8s/app/frontend-deployment.yaml"
@@ -148,7 +207,7 @@ jobs:
             fi
           done
 
-      - name: Update image tags for changed services
+      - name: Update image tags for selected services
         run: |
           SERVICES='${{ needs.detect-changes.outputs.services }}'
           TAG="${{ needs.detect-changes.outputs.image_tag }}"
@@ -177,6 +236,8 @@ jobs:
         run: |
           echo "=============================="
           echo " Deployment Summary"
+          echo " Tag: ${{ needs.detect-changes.outputs.image_tag }}"
+          echo " Services: ${{ needs.detect-changes.outputs.services }}"
           echo "=============================="
           kubectl get pods -n app
           kubectl get pods -n data

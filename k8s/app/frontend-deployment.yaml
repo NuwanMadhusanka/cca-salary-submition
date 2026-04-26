@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: techsalary-local/frontend:latest
+          image: nuwan1998/cca-salary-submition:frontend-latest
           imagePullPolicy: IfNotPresent
           env:
             - name: PORT

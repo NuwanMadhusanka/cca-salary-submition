@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: vote
-          image: techsalary-local/vote:latest
+          image: nuwan1998/cca-salary-submition:vote-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8083

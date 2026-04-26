@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: bff
-          image: techsalary-local/bff:latest
+          image: nuwan1998/cca-salary-submition:bff-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4000

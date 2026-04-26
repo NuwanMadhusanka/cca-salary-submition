@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: salary-submission
-          image: techsalary-local/salary-submission:latest
+          image: nuwan1998/cca-salary-submition:salary-submission-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081

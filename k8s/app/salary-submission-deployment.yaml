@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salary-submission
+  namespace: app
+  labels:
+    app: salary-submission
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salary-submission
+  template:
+    metadata:
+      labels:
+        app: salary-submission
+    spec:
+      containers:
+        - name: salary-submission
+          image: techsalary-local/salary-submission:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: LOG_LEVEL
+              value: "ERROR"
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 20

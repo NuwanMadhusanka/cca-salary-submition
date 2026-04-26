@@ -45,6 +45,7 @@ mongodata/
 dist/
 build/
 out/
+docs/
 
 # Testing
 coverage/
@@ -109,3 +110,7 @@ coverage/
 # Logs
 logs/
 *.log
+AGENT.md
+
+# Frontend lockfile is used by the Docker build
+!services/frontend/package-lock.json

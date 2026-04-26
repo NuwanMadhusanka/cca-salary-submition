@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "Stats Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/stats/health"
+      }
+    },
+    {
+      "name": "Get All Statistics",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/stats"
+      }
+    },
+    {
+      "name": "Get Statistics - By Role",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?role=Engineer",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [{ "key": "role", "value": "Engineer" }]
+        }
+      }
+    },
+    {
+      "name": "Get Statistics - By Country",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?country=LK",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [{ "key": "country", "value": "LK" }]
+        }
+      }
+    },
+    {
+      "name": "Get Statistics - By Company",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?company=Google",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [{ "key": "company", "value": "Google" }]
+        }
+      }
+    },
+    {
+      "name": "Get Statistics - By Experience Level",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?experienceLevel=SENIOR",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [{ "key": "experienceLevel", "value": "SENIOR" }]
+        }
+      }
+    },
+    {
+      "name": "Get Statistics - Combined Filters",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?role=Engineer&country=LK&experienceLevel=SENIOR",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [
+            { "key": "role", "value": "Engineer" },
+            { "key": "country", "value": "LK" },
+            { "key": "experienceLevel", "value": "SENIOR" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Statistics - Company + Experience",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats?company=Google&experienceLevel=SENIOR",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats"],
+          "query": [
+            { "key": "company", "value": "Google" },
+            { "key": "experienceLevel", "value": "SENIOR" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - Monthly (All)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?period=month",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [{ "key": "period", "value": "month" }]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - Quarterly (All)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?period=quarter",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [{ "key": "period", "value": "quarter" }]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - By Company Monthly",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?company=Google&period=month",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [
+            { "key": "company", "value": "Google" },
+            { "key": "period", "value": "month" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - By Role Quarterly",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?role=Developer&period=quarter",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [
+            { "key": "role", "value": "Developer" },
+            { "key": "period", "value": "quarter" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - By Country Monthly",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?country=LK&period=month",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [
+            { "key": "country", "value": "LK" },
+            { "key": "period", "value": "month" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Trends - Combined Filters",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stats/trends?role=Engineer&country=LK&period=month",
+          "host": ["{{baseUrl}}"],
+          "path": ["stats", "trends"],
+          "query": [
+            { "key": "role", "value": "Engineer" },
+            { "key": "country", "value": "LK" },
+            { "key": "period", "value": "month" }
+          ]
+        }
+      }
+    }
+  ]
+}

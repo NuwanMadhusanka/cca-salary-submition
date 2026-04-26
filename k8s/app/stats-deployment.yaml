@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: stats
-          image: techsalary-local/stats:latest
+          image: nuwan1998/cca-salary-submition:stats-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8085
@@ -33,6 +33,13 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secret
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "600m"
+              memory: "768Mi"
           readinessProbe:
             tcpSocket:
               port: 8085
